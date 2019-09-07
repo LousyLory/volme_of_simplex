@@ -8,6 +8,9 @@ import numpy.linalg as lg
 import sys
 import argparse
 import copy
+from scipy.special import factorial
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 def construct_simplex(dimensions, range_):
 	"""
@@ -49,7 +52,7 @@ def draw_a(V):
 	V: list of vertices of a simplex, 2D numpy array
 	output:
 	a: a vector in unit sphere S^(n-1) such that a^T.v is not equal to
-	   a^T.w for any distinct vecrtices (v,w) \in V^2
+	a^T.w for any distinct vecrtices (v,w) in V^2
 	This is inspired from Lasserre's works (2.2) of the paper
 	'Volume of slices and sections of the simplex in closed form'
 	"""
@@ -66,51 +69,67 @@ def compute_volume_section(V, a, t):
 	output:
 	volume: volume of the section formed with V and a
 	"""
+	# set up volume
 	volume = 0
-	"""
-	# costly way
-	for i in range(len(V)):
-		V_dash = copy.deepcopy(V)
-		# actual computation
-		numerator = t-np.dot(a, V[i,:])
-		# relu
-		numerator = max(0, numerator)
-		# power to relu
-		numerator = np.power(numerator, len(V))
-
-		# subtraction (v-w) for all w and a given v
-		V_dash = V_dash-V_dash[i,:]
-		# product a^T*(v-w)
-		prod_vec = np.dot(a, V_dash.T)
-		# drop v == v
-		prod_vec = prod_vec[prod_vec != 0]
-		# product over all w in V and w not equal to v
-		prod_val = np.prod(prod_vec)
-
-		# the final fraction in this loop
-		fraction = numerator/prod_val
-		
-		volume = volume+fraction
-	"""
-	# less costly way
+	# less costly way is to compute prod_vec only once
 	# compute a^T*v for all v in V
 	prod_vec = np.dot(a, V.T)
+	
+	# for loop for the sum computations
 	for i in range(len(V)):
+		# copy the prod_Vec for further processing
 		sample_prod = copy.deepcopy(prod_vec)
-		
-		sample_prod = sample_prod[]
+		# take out the vertex in consideration
+		sample_prod = sample_prod[sample_prod != sample_prod[0,i]]
+		# subtract the val from the remaining values
+		sample_prod = prod_vec[0,i] - sample_prod
+		# compute the product
+		denominator = np.prod(sample_prod)
+		# numerator
+		numerator = t - prod_vec [0,i]
+		# fraction
+		fraction = numerator/denominator
+		# volume
+		volume = volume+fraction
+
+	# multiply factorial n
+	volume = volume/factorial(len(V))
 	return volume
+
+def visualize(Simplex, A):
+	"""
+	visualize function to verify the values obtained
+	"""
+	if Simplex.shape[-1] > 3:
+		print("can't visualize more than 3 dimensions")
+		sys.exit(1)
+	else:
+		pass
+	# visualize the simplex
+	if Simplex.shape[-1] > 2:
+		fig = plt.figure().gca(projection='3d')
+		fig.plot_surface(Simplex[:,0], Simplex[:,1], Simplex[:,2], alpha=0.2)
+		ax = plt.gca(projection='3d')
+		ax.hold(True)
+		fig.plot_surface(A[:,0], A[:,1], A[:,2], alpha=0.2)
+		plt.savefig("visualization/3D.png")
+	else:
+		pass
+	return None
 
 def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--dimensions", default=2, type=int, help="the R^n space in which the simplex exists")
-	parser.add_Argument("--boundary_val", default=0.3, type=float, help="a^T*x <= t")
+	parser.add_argument("--boundary_val", default=0.3, type=float, help="a^T*x <= t")
+	parser.add_argument("--visualization", default=False, type=bool, help="choose whether to visualize or not")
 	args = parser.parse_args()
 
 	Simplex = construct_simplex(args.dimensions, [0, 1])
 	A = draw_a(Simplex)
 	vol = compute_volume_section(Simplex, A, args.boundary_val)
-	print(Simplex, A)
+	if args.visualization:
+		visualize(Simplex, A)
+	print(Simplex, A, vol)
 
 if __name__ == "__main__":
 	main()
