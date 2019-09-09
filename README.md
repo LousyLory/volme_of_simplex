@@ -3,4 +3,4 @@ This code base follows the implementation of volume of simplex (sections and sli
 
 Everything is implemented using numpy (and python). The visualizations are in matplotlib.
 
-the code is weel documented and annoted to help understand what is happennning in each and every stage.
+The code is well documented and annotated to help understand what is happening in each and every stage.
